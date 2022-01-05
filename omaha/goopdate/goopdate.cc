@@ -398,7 +398,7 @@ GoopdateImpl::~GoopdateImpl() {
   ASSERT(!RegKey::HasKey(_T("HKEY_USERS\\.DEFAULT\\Software\\") PATH_COMPANY_NAME _T("\\Update")),
          (_T("This assert has fired because it has found the registry key at ")
           _T("'HKEY_USERS\\.DEFAULT\\Software\\") PATH_COMPANY_NAME _T("\\Update'. ")
-          _T("Please delete the key and report to ") FULL_COMPANY_NAME _T(" team if ")
+          _T("Please delete the key and report to omaha-core team if ")
           _T("the assert fires again.")));
 
   // The global metrics collection must be uninitialized before the metrics

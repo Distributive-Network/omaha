@@ -1108,8 +1108,8 @@ TEST_F(GoopdateUtilsRegistryProtectedWithMachineFolderPathsTest,
   CString path = BuildGoogleUpdateExePath(true);
   CString program_files_path;
   EXPECT_SUCCEEDED(GetFolderPath(CSIDL_PROGRAM_FILES, &program_files_path));
-  EXPECT_STREQ(program_files_path + (_T("\\") PATH_COMPANY_NAME
-               _T("\\") PRODUCT_NAME _T("\\") MAIN_EXE_BASE_NAME _T(".exe")),
+  EXPECT_STREQ(program_files_path + _T("\\") + PATH_COMPANY_NAME +
+               _T("\\") + PRODUCT_NAME + _T("\\") + MAIN_EXE_BASE_NAME + _T(".exe"),
                path);
 }
 
@@ -1119,15 +1119,15 @@ TEST_F(GoopdateUtilsRegistryProtectedWithMachineFolderPathsTest,
   CString path = BuildGoogleUpdateExePath(true);
   CString program_files_path;
   EXPECT_SUCCEEDED(GetFolderPath(CSIDL_PROGRAM_FILES, &program_files_path));
-  EXPECT_STREQ(program_files_path + (_T("\\") PATH_COMPANY_NAME
-               _T("\\") PRODUCT_NAME _T("\\") MAIN_EXE_BASE_NAME _T(".exe")),
+  EXPECT_STREQ(program_files_path + _T("\\") + PATH_COMPANY_NAME +
+               _T("\\") + PRODUCT_NAME + _T("\\") + MAIN_EXE_BASE_NAME + _T(".exe"),
                path);
 
   // Test when the key exists but the value doesn't.
   ASSERT_SUCCEEDED(RegKey::CreateKey(MACHINE_REG_CLIENTS_GOOPDATE));
   path = BuildGoogleUpdateExePath(true);
-  EXPECT_STREQ(program_files_path + (_T("\\") PATH_COMPANY_NAME
-               _T("\\") PRODUCT_NAME _T("\\") MAIN_EXE_BASE_NAME _T(".exe")),
+  EXPECT_STREQ(program_files_path + _T("\\") + PATH_COMPANY_NAME +
+               _T("\\") + PRODUCT_NAME + _T("\\") + MAIN_EXE_BASE_NAME + _T(".exe"),
                path);
 }
 
