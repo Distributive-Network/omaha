@@ -52,7 +52,7 @@ var COMMAND_STATUS_ERROR = COMMAND_STATUS_RUNNING + 1;
 var COMMAND_STATUS_COMPLETE = COMMAND_STATUS_ERROR + 1;
 
 function update3webProgId(is_machine) {
-  return 'KDSUpdate.Update3Web' + (is_machine ? 'Machine' : 'User');
+  return 'DistributiveUpdate.Update3Web' + (is_machine ? 'Machine' : 'User');
 }
 
 function initializeBundle(is_machine) {

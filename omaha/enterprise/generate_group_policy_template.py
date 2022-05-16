@@ -30,7 +30,7 @@ import sys
 
 
 HORIZONTAL_RULE = ';%s\n' % ('-' * 78)
-MAIN_POLICY_KEY = r'Software\Policies\Kings Distributed Systems\Update'
+MAIN_POLICY_KEY = r'Software\Policies\Distributive\Update'
 
 # pylint: disable-msg=C6004
 HEADER = """\

@@ -50,10 +50,10 @@ unittest_support = env.Replicate('$STAGING_DIR/unittest_support/', [
     # Chrome certificate: sha1 (01/28/2014 to 01/29/2016)
     'unittest_support/chrome_certificate_2912C70C9A2B8A3EF6F6074662D68B8D.dll',
     'unittest_support/CodeRed.crx3',
-    'unittest_support/KDSUpdate_corrupted.exe',
-    'unittest_support/KDSUpdate_now_expired_cert.exe',
-    'unittest_support/KDSUpdate_old_signature.exe',
-    'unittest_support/KDSUpdateHelper.msi',
+    'unittest_support/DistributiveUpdate_corrupted.exe',
+    'unittest_support/DistributiveUpdate_now_expired_cert.exe',
+    'unittest_support/DistributiveUpdate_old_signature.exe',
+    'unittest_support/DistributiveUpdateHelper.msi',
     'unittest_support/old_google_certificate.dll',
     'unittest_support/SaveArguments.exe',
     'unittest_support/SaveArguments_different_ou.exe',
@@ -113,17 +113,17 @@ unittest_support = env.Replicate('$STAGING_DIR/unittest_support/', [
 # Saved versions of Google Update for the Setup tests.
 unittest_support += env.Replicate(
     '$STAGING_DIR/unittest_support/omaha_1.2.131.7_shell/', [
-    'unittest_support/omaha_1.2.131.7_shell/KDSUpdate.exe',
+    'unittest_support/omaha_1.2.131.7_shell/DistributiveUpdate.exe',
     ])
 unittest_support += env.Replicate(
     '$STAGING_DIR/unittest_support/omaha_1.2.183.9_shell/', [
-    'unittest_support/omaha_1.2.183.9_shell/KDSUpdate.exe',
+    'unittest_support/omaha_1.2.183.9_shell/DistributiveUpdate.exe',
     ])
 unittest_support += env.Replicate('$STAGING_DIR/unittest_support/omaha_1.2.x/',
-    'unittest_support/omaha_1.2.x/KDSUpdate.exe'
+    'unittest_support/omaha_1.2.x/DistributiveUpdate.exe'
     )
 unittest_support += env.Replicate('$STAGING_DIR/unittest_support/omaha_1.3.x/',
-    [ 'unittest_support/omaha_1.3.x/KDSUpdate.exe',
+    [ 'unittest_support/omaha_1.3.x/DistributiveUpdate.exe',
       'unittest_support/omaha_1.3.x/goopdate.dll',
       'unittest_support/omaha_1.3.x/goopdateres_en.dll',
     ])
@@ -131,13 +131,13 @@ unittest_support += env.Replicate('$STAGING_DIR/unittest_support/omaha_1.3.x/',
 # Newer versions of Google Update for the Setup tests.
 #unittest_support += env.Replicate(
 #              '$STAGING_DIR/unittest_support/omaha_1.3.x_newer/',
-#              'unittest_support/omaha_1.2.x_newer/KDSUpdate.exe')
+#              'unittest_support/omaha_1.2.x_newer/DistributiveUpdate.exe')
 
 # Copy longrunning.exe to GoogleUpdate.exe for use in Setup.
 unittest_support += env.Replicate(
     target='$STAGING_DIR/unittest_support/does_not_shutdown/',
     source='$MAIN_DIR/testing/unittest_support/LongRunningSilent.exe',
-    REPLICATE_REPLACE=[('LongRunningSilent\\.exe', 'KDSUpdate.exe')],
+    REPLICATE_REPLACE=[('LongRunningSilent\\.exe', 'DistributiveUpdate.exe')],
 )
 
 # download_cache test files
@@ -174,7 +174,7 @@ tags = {
 for tag_name, tag_option in tags.items():
   unittest_support += env.OmahaCertificateTagForTesting(
      target = '$STAGING_DIR/unittest_support/tagged_msi/GUH-%s.msi' % tag_name,
-     source = 'unittest_support/KDSUpdateHelper.msi',
+     source = 'unittest_support/DistributiveUpdateHelper.msi',
      magic_bytes = tag_option[0],
      tag = tag_option[1],
      tag_length = tag_option[2])
@@ -654,7 +654,7 @@ omaha_unittest_env.Depends(test, unittest_support)
 
 # extractor_unittest.cc uses GoogleUpdateSetup_repair.exe as a zero-length tag
 # cert-tagged exe.
-omaha_unittest_env.Depends(test, '$STAGING_DIR/KDSUpdateSetup_repair.exe')
+omaha_unittest_env.Depends(test, '$STAGING_DIR/DistributiveUpdateSetup_repair.exe')
 
 # Customization/UI tests depend on goopdate.dll (for TypeLib/resources)
 omaha_unittest_env.Depends(test, '$TESTS_DIR/goopdate.dll')

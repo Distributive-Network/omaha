@@ -78,7 +78,7 @@ if core_env.Bit('has_device_management'):
 google_core_res_target = 'resource.res'
 google_core_res = core_env.RES(source = 'resource.rc',
                                target = google_core_res_target)
-core_env.Depends(google_core_res, 'KDSUpdateCore.manifest')
+core_env.Depends(google_core_res, 'DistributiveUpdateCore.manifest')
 
 google_core_inputs = [
     'core_launcher.cc',
@@ -86,7 +86,7 @@ google_core_inputs = [
     google_core_res,
     ]
 
-exe_name = 'KDSUpdateCore'
+exe_name = 'DistributiveUpdateCore'
 
 unsigned_core = core_env.ComponentProgram(
     prog_name='%s_unsigned.exe' % exe_name,
