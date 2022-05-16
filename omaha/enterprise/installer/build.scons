@@ -108,7 +108,7 @@ def _BuildSampleForTest():
 
         build_enterprise_installer.BuildEnterpriseInstaller(
             env,
-            'Kings Distributed Systems',
+            'Distributive',
             product_name, product_version, product_guid,
             product_custom_params,
             product_installer_path,
@@ -118,7 +118,7 @@ def _BuildSampleForTest():
             prefix + msi_base_name + '_' + combo[0],
             '$MAIN_DIR/enterprise/installer',
             msi_custom_action_dll,
-            '$STAGING_DIR/%sKDSUpdateSetup.exe' % prefix,
+            '$STAGING_DIR/%sDistributiveUpdateSetup.exe' % prefix,
             output_dir = '$TARGET_ROOT/Test_Installers'
         )
 
@@ -178,12 +178,12 @@ if BUILDING_WITH_GOOGLE_UPDATE:
 #  omaha/test/test_foo.wxs.xml
 #  omaha/test/build.scons
 
-metainstaller_path = '$STAGING_DIR/KDSUpdateSetup.exe'
+metainstaller_path = '$STAGING_DIR/DistributiveUpdateSetup.exe'
 version = '0.0.1.0'
 google_update_wixobj = build_enterprise_installer.BuildGoogleUpdateFragment(
             env,
             metainstaller_path,
-            'Kings Distributed Systems',
+            'Distributive',
             'DCP',
             version,
             '{EF1FFA8B-49A9-475D-9698-DC379FF1257C}',
@@ -192,4 +192,4 @@ google_update_wixobj = build_enterprise_installer.BuildGoogleUpdateFragment(
             ('$MAIN_DIR/enterprise/installer/'
                 'google_update_machine_installer_fragment.wxs.xml')
 )
-print("KDS update WiX fragment location: {}".format(google_update_wixobj))
+print("Distributive update WiX fragment location: {}".format(google_update_wixobj))

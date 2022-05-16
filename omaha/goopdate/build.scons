@@ -54,7 +54,7 @@ def BuildCOMForwarder(cmd_line_switch,
   com_forwarder_res = com_forwarder_env.RES('%s.res' % signed_exe_name,
                                             '../google_update/resource.rc')
   com_forwarder_env.Depends(com_forwarder_res,
-                            '../google_update/KDSUpdate.manifest')
+                            '../google_update/DistributiveUpdate.manifest')
   com_forwarder_inputs = [
        com_forwarder_env.ComponentObject('%s.obj' % signed_exe_name,
                                          'com_forwarder.cc'),
@@ -74,8 +74,8 @@ def BuildCOMForwarder(cmd_line_switch,
 
 
 # Build the broker/legacy on-demand/WebPlugin forwarders.
-BuildCOMForwarder('/broker', 'KDSUpdateBroker', False)
-BuildCOMForwarder('/ondemand', 'KDSUpdateOnDemand', False)
+BuildCOMForwarder('/broker', 'DistributiveUpdateBroker', False)
+BuildCOMForwarder('/ondemand', 'DistributiveUpdateOnDemand', False)
 
 def BuildCOMRegisterShell64():
   com_register_shell_env = env.CloneAndMake64Bit()
@@ -119,13 +119,13 @@ def BuildCOMRegisterShell64():
     )
 
   unsigned_exe = com_register_shell_env.ComponentProgram(
-      prog_name='KDSUpdateComRegisterShell64_unsigned',
+      prog_name='DistributiveUpdateComRegisterShell64_unsigned',
       source= [
           'com_register_shell.cc',
           ]
   )
   signed_exe = com_register_shell_env.DualSignedBinary(
-      target='KDSUpdateComRegisterShell64.exe',
+      target='DistributiveUpdateComRegisterShell64.exe',
       source=unsigned_exe,
   )
   env.Replicate('$STAGING_DIR', signed_exe)
@@ -626,7 +626,7 @@ test_installer_env.Append(
 test_installer_res = test_installer_env.RES('TestOmahaExeInstaller.res',
                                             '../google_update/resource.rc')
 test_installer_env.Depends(test_installer_res,
-                           '../google_update/KDSUpdate.manifest')
+                           '../google_update/DistributiveUpdate.manifest')
 test_installer_inputs = [
     test_installer_env.ComponentObject('TestOmahaExeInstaller.obj',
                                        'test_omaha_exe_installer.cc'),

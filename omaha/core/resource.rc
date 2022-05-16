@@ -19,7 +19,7 @@
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 
-1 RT_MANIFEST "KDSUpdateCore.manifest"
+1 RT_MANIFEST "DistributiveUpdateCore.manifest"
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
