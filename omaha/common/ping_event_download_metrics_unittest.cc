@@ -23,7 +23,7 @@ namespace omaha {
 
 namespace {
 
-const CString kPv = _T("1.3.99.0");
+const CString kPv = _T("1.3.101.0");
 const CString kLang = _T("en");
 const CString kBrandCode = _T("GOOG");
 const CString kClientId = _T("testclientid");
@@ -83,7 +83,7 @@ TEST_F(PingEventDownloadMetricsTest, BuildPing) {
   CString expected_ping_request_substring;
   expected_ping_request_substring =
       _T("<app appid=\"") GOOPDATE_APP_ID _T("\" ")
-      _T("version=\"1.3.99.0\" nextversion=\"\" lang=\"en\" brand=\"GOOG\" ")
+      _T("version=\"1.3.101.0\" nextversion=\"\" lang=\"en\" brand=\"GOOG\" ")
       _T("client=\"testclientid\" ")
       _T("iid=\"{7C0B6E56-B24B-436b-A960-A6EA201E886D}\">")
       _T("<event eventtype=\"14\" eventresult=\"0\" errorcode=\"5\" ")
