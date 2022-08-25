@@ -273,7 +273,7 @@ TEST_P(WebServicesClientTest, SendString) {
   // Test sending a user update check request.
   CString request_string =
     _T("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-    _T("<request protocol=\"3.0\" updaterversion=\"1.3.103.0\" xshell_version=\"1.3.103.0\" ismachine=\"0\"")
+    _T("<request protocol=\"3.0\" updaterversion=\"1.3.99.0\" xshell_version=\"1.3.99.0\" ismachine=\"0\"")
     _T(" sessionid=\"{00000000-0000-0000-0000-000000000000}\"")
     _T(" requestid=\"{00000000-0000-0000-0000-000000000000}\">")
     _T("<hw physmemory=\"32\" sse=\"1\" sse2=\"1\" sse3=\"1\" ssse3=\"1\" sse41=\"1\" sse42=\"1\" avx=\"1\"/>")
@@ -320,7 +320,7 @@ TEST_F(WebServicesClientTest, SendStringWithCustomHeader) {
   // Test sending a user update check request.
   CString request_string =
     _T("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-    _T("<request protocol=\"3.0\" updaterversion=\"1.3.103.0\" xshell_version=\"1.3.103.0\" ismachine=\"0\"")
+    _T("<request protocol=\"3.0\" updaterversion=\"1.3.99.0\" xshell_version=\"1.3.99.0\" ismachine=\"0\"")
     _T(" sessionid=\"{00000000-0000-0000-0000-000000000000}\"")
     _T(" requestid=\"{00000000-0000-0000-0000-000000000000}\">")
     _T("<hw physmemory=\"32\" sse=\"1\" sse2=\"1\" sse3=\"1\" ssse3=\"1\" sse41=\"1\" sse42=\"1\" avx=\"1\"/>")

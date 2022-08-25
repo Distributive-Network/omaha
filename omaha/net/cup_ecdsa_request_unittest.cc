@@ -42,7 +42,7 @@ const TCHAR* const kPostUrl =
 const TCHAR* const kPostHttpsUrl =
     _T("https://updates.") COMPANY_DOMAIN _T("/service/update2");
 const uint8 kRequestBuffer[] =
-    "<request protocol=\"3.0\" updaterversion=\"1.3.103.0\" xshell_version=\"1.3.103.0\" ismachine=\"0\""
+    "<request protocol=\"3.0\" updaterversion=\"1.3.99.0\" xshell_version=\"1.3.99.0\" ismachine=\"0\""
     " sessionid=\"{00000000-0000-0000-0000-000000000000}\""
     " requestid=\"{00000000-0000-0000-0000-000000000000}\">"
     "<hw physmemory=\"32\" sse=\"1\" sse2=\"1\" sse3=\"1\" ssse3=\"1\" sse41=\"1\" sse42=\"1\" avx=\"1\"/>"
