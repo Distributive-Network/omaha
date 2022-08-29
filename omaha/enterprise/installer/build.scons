@@ -186,7 +186,7 @@ google_update_wixobj = build_enterprise_installer.BuildGoogleUpdateFragment(
             'Distributive',
             'DCP',
             version,
-            '{EF1FFA8B-49A9-475D-9698-DC379FF1257C}',
+            '{93FBCD41-FDF7-40B9-A364-99FF4A9A140F}',
             '',
             'DCP',
             ('$MAIN_DIR/enterprise/installer/'

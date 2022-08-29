@@ -69,8 +69,8 @@ _FULL_COMPANY_NAME = 'Distributive'
 _SHORT_COMPANY_NAME = 'Distributive'
 _PATH_COMPANY_NAME = 'Distributive'
 _PRODUCT_NAME = 'Update'
-_COMPANY_DOMAIN_BASE = 'kingsds'
-_COMPANY_DOMAIN = 'kingsds.network'
+_COMPANY_DOMAIN_BASE = 'distributive'
+_COMPANY_DOMAIN = 'distributive.network'
 _MAIN_EXE_BASE_NAME = 'DistributiveUpdate'
 # TODO(omaha): Use this throughout the build files where goopdate and
 # goopdateres are referenced.
