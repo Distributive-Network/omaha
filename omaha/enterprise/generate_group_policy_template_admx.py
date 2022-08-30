@@ -28,7 +28,7 @@ import re
 import sys
 
 
-MAIN_POLICY_KEY = r'Software\Policies\Kings Distributed Systems\Update'
+MAIN_POLICY_KEY = r'Software\Policies\Distributive\Update'
 
 ADMX_HEADER = '<policyDefinitions revision="1.0" schemaVersion="1.0">'
 
@@ -38,7 +38,7 @@ ADMX_ENVIRONMENT = '''
     <using namespace="Google.Policies" prefix="Google"/>
     <using prefix="windows" namespace="Microsoft.Policies.Windows" />
   </policyNamespaces>
-  <supersededAdm fileName="KDSUpdate.adm" />
+  <supersededAdm fileName="DistributiveUpdate.adm" />
   <resources minRequiredRevision="1.0" />
   <supportedOn>
     <definitions>
@@ -117,20 +117,20 @@ ADMX_POLICIES = r'''
         displayName="$(string.Pol_UpdateCheckSuppressedPeriod)"
         explainText="$(string.Explain_UpdateCheckSuppressedPeriod)"
         presentation="$(presentation.Pol_UpdateCheckSuppressedPeriod)"
-        key="Software\Policies\Kings Distributed Systems\Update">
+        key="Software\Policies\Distributive\Update">
       <parentCategory ref="Cat_Preferences" />
       <supportedOn ref="Sup_GoogleUpdate1_3_33_5" />
       <elements>
         <decimal id="Part_UpdateCheckSuppressedStartHour"
-            key="Software\Policies\Kings Distributed Systems\Update"
+            key="Software\Policies\Distributive\Update"
             valueName="UpdatesSuppressedStartHour"
             required="true" minValue="0" maxValue="23" />
         <decimal id="Part_UpdateCheckSuppressedStartMin"
-            key="Software\Policies\Kings Distributed Systems\Update"
+            key="Software\Policies\Distributive\Update"
             valueName="UpdatesSuppressedStartMin"
             required="true" minValue="0" maxValue="59" />
         <decimal id="Part_UpdateCheckSuppressedDurationMin"
-            key="Software\Policies\Kings Distributed Systems\Update"
+            key="Software\Policies\Distributive\Update"
             valueName="UpdatesSuppressedDurationMin"
             required="true" minValue="1" maxValue="960" />
       </elements>

@@ -73,7 +73,7 @@ exe_env.Append(
 )
 
 exe_res = exe_env.RES('resource.rc')
-exe_env.Depends(exe_res, 'KDSUpdate.manifest')
+exe_env.Depends(exe_res, 'DistributiveUpdate.manifest')
 
 exe_inputs = [
     'winmain.cc',
@@ -90,12 +90,12 @@ Depends(exe_env['OBJ_ROOT'] + '/google_update/generated_resources_en.res',
     exe_env['MAIN_DIR'] + '/VERSION')
 
 unsigned_exe_output = exe_env.ComponentProgram(
-    prog_name='KDSUpdate_unsigned',
+    prog_name='DistributiveUpdate_unsigned',
     source=exe_inputs,
 )
 
 sign_output = env.DualSignedBinary(
-    target='KDSUpdate_signed.exe',
+    target='DistributiveUpdate_signed.exe',
     source=unsigned_exe_output,
 )
 

@@ -17,10 +17,10 @@
 
 """Constants and utilities related to Omaha and tools versions"""
 
-_ONECLICK_PLUGIN_NAME = 'npKDSOneClick'
-_UPDATE_PLUGIN_NAME = 'npKDSUpdate'
-_MAIN_EXE_BASE_NAME = 'KDSUpdate'
-_CRASH_HANDLER_NAME = 'KDSCrashHandler'
+_ONECLICK_PLUGIN_NAME = 'npDistributiveOneClick'
+_UPDATE_PLUGIN_NAME = 'npDistributiveUpdate'
+_MAIN_EXE_BASE_NAME = 'DistributiveUpdate'
+_CRASH_HANDLER_NAME = 'DistributiveCrashHandler'
 
 # List of languages that are fully supported in the current build.
 _OMAHA_LANGUAGES = [

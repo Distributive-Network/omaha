@@ -87,7 +87,7 @@ if exe_env.Bit('has_device_management'):
 
 exe_res = exe_env.RES(source = 'resource.rc',
                       target = 'resource.res')
-exe_env.Depends(exe_res, '../../google_update/KDSUpdate.manifest')
+exe_env.Depends(exe_res, '../../google_update/DistributiveUpdate.manifest')
 
 exe_inputs = [
     'command_line.cc',

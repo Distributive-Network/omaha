@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-  <?define CompanyName = 'Kings Distributed Systems' ?>
+  <?define CompanyName = 'Distributive' ?>
   <?define UpgradeCode='96E1371A-A5A1-45cc-8E67-2EF6ABDE054D' ?>
 
    <Product Id='$(var.FooProductGuid)' Name='!!! Test Foo' Language='1033'
