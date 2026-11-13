@@ -42,12 +42,14 @@ namespace omaha {
 
 namespace internal {
 
+// Both slots hold the Distributive key, so the UpdateDev test-key switch cannot
+// make the client trust any other key.
 const uint8 CupEcdsaRequestImpl::kCupProductionPublicKey[] =
-#include "omaha/net/cup_ecdsa_pubkey.1.h"
+#include "omaha/net/cup_ecdsa_pubkey.2.h"
 ;   // NOLINT
 
 const uint8 CupEcdsaRequestImpl::kCupTestPublicKey[] =
-#include "omaha/net/cup_ecdsa_pubkey.3.h"
+#include "omaha/net/cup_ecdsa_pubkey.2.h"
 ;   // NOLINT
 
 CupEcdsaRequestImpl::CupEcdsaRequestImpl(HttpRequestInterface* http_request)

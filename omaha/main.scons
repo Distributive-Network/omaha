@@ -372,7 +372,7 @@ win_env.SetBitFromOption('analysis', False)
 win_env.SetBitFromOption('suppress_light_validation', False)
 
 # Whether the Authenticode signature of update payloads should be verified.
-win_env.SetBitFromOption('verify_payload_authenticode_signature', False)
+win_env.SetBitFromOption('verify_payload_authenticode_signature', True)
 
 #
 # Set up version info.
