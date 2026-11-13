@@ -97,6 +97,11 @@ const ULONG kFacilityOmaha = 67;
 #define CI_E_BITS_DISABLED                        \
     MAKE_HRESULT(SEVERITY_ERROR, kFacilityOmaha, 0x0030)
 
+// CI_E_BITS_REQUEUED is returned by a BITS request if a job is moved back from
+// transmitting state to queued state due to a user session switch or logoff.
+#define CI_E_BITS_REQUEUED                        \
+    MAKE_HRESULT(SEVERITY_ERROR, kFacilityOmaha, 0x0031)
+
 // CI_E_HTTPS_CERT_FAILURE is returned when the https connection fails.
 // One cause of this is when the system clock is off by a significant
 // amount which makes the server certificate appear invalid.
@@ -194,6 +199,9 @@ const ULONG kFacilityOmaha = 67;
 // The file could not be cached.
 #define GOOPDATEDOWNLOAD_E_CACHING_FAILED           \
     MAKE_OMAHA_HRESULT(SEVERITY_ERROR, 0x50D)
+
+#define GOOPDATEDOWNLOAD_E_AUTHENTICODE_VERIFICATION_FAILED \
+    MAKE_OMAHA_HRESULT(SEVERITY_ERROR, 0x50E)
 
 #define GOOPDATEDOWNLOAD_E_FAILED_MOVE              \
     MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x5FF)

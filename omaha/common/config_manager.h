@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <atlpath.h>
 #include <atlstr.h>
+#include <atltime.h>
 #include <memory>
 #include <vector>
 #include "base/basictypes.h"
@@ -47,7 +48,7 @@ class PolicyManagerInterface {
  public:
   virtual ~PolicyManagerInterface() {}
 
-  virtual const TCHAR* source() = 0;
+  virtual CString source() = 0;
 
   virtual bool IsManaged() = 0;
 
@@ -76,12 +77,11 @@ class PolicyManagerInterface {
                                                    bool* rollback_allowed) = 0;
 };
 
-// A version that picks up policy information from Group Policy.
-class GroupPolicyManager : public PolicyManagerInterface {
+class OmahaPolicyManager : public PolicyManagerInterface {
  public:
-  GroupPolicyManager() {}
+  explicit OmahaPolicyManager(const CString& source) : source_(source) {}
 
-  const TCHAR* source() override { return _T("Group Policy"); }
+  CString source() override { return source_; }
 
   bool IsManaged() override;
 
@@ -108,51 +108,14 @@ class GroupPolicyManager : public PolicyManagerInterface {
   HRESULT IsRollbackToTargetVersionAllowed(const GUID& app_guid,
                                            bool* rollback_allowed) override;
 
- private:
-  DISALLOW_COPY_AND_ASSIGN(GroupPolicyManager);
-};
-
-// A version that picks up policy information from a Device Management (DM).
-class DMPolicyManager : public PolicyManagerInterface {
- public:
-  DMPolicyManager() {}
-
-  const TCHAR* source() override { return _T("Device Management"); }
-
-  bool IsManaged() override;
-
-  HRESULT GetLastCheckPeriodMinutes(DWORD* minutes) override;
-  HRESULT GetUpdatesSuppressedTimes(UpdatesSuppressedTimes* times) override;
-  HRESULT GetDownloadPreferenceGroupPolicy(
-      CString* download_preference) override;
-  HRESULT GetPackageCacheSizeLimitMBytes(DWORD* cache_size_limit) override;
-  HRESULT GetPackageCacheExpirationTimeDays(DWORD* cache_life_limit) override;
-  HRESULT GetProxyMode(CString* proxy_mode) override;
-  HRESULT GetProxyPacUrl(CString* proxy_pac_url) override;
-  HRESULT GetProxyServer(CString* proxy_server) override;
-  HRESULT GetForceInstallApps(bool is_machine,
-                              std::vector<CString>* app_ids) override;
-
-  HRESULT GetEffectivePolicyForAppInstalls(const GUID& app_guid,
-                                           DWORD* install_policy) override;
-  HRESULT GetEffectivePolicyForAppUpdates(const GUID& app_guid,
-                                          DWORD* update_policy) override;
-  HRESULT GetTargetChannel(const GUID& app_guid,
-                           CString* target_channel) override;
-  HRESULT GetTargetVersionPrefix(const GUID& app_guid,
-                                 CString* target_version_prefix) override;
-  HRESULT IsRollbackToTargetVersionAllowed(const GUID& app_guid,
-                                           bool* rollback_allowed) override;
-
-  void set_dm_policy(const CachedOmahaPolicy& dm_policy) {
-    dm_policy_ = dm_policy;
-  }
-  CachedOmahaPolicy dm_policy() { return dm_policy_; }
+  void set_policy(const CachedOmahaPolicy& policy);
+  CachedOmahaPolicy policy() { return policy_; }
 
  private:
-  CachedOmahaPolicy dm_policy_;
+  CString source_;
+  CachedOmahaPolicy policy_;
 
-  DISALLOW_COPY_AND_ASSIGN(DMPolicyManager);
+  DISALLOW_COPY_AND_ASSIGN(OmahaPolicyManager);
 };
 
 class ConfigManager {
@@ -289,6 +252,17 @@ class ConfigManager {
   // %ProgramFiles%/Google/Update
   CString GetMachineGoopdateInstallDir() const;
 
+  // Gets the Google company directory. Does not create the directory if it does
+  // not already exist.
+  // `%LocalAppData%/Google` or `%ProgramFiles%/Google`.
+  CString GetUserCompanyDir() const;
+  CString GetMachineCompanyDir() const;
+
+  // Creates and returns a secure directory, %ProgramFiles%/Google/Temp, if
+  // running as Admin. Otherwise, returns the %TMP% for the impersonated or
+  // current user.
+  CString GetTempDir() const;
+
   // Checks if the running program is executing from the User Goopdate dir.
   bool IsRunningFromMachineGoopdateInstallDir() const;
 
@@ -308,6 +282,9 @@ class ConfigManager {
   // Returns the service endpoint where the usage stats requests are sent.
   HRESULT GetUsageStatsReportUrl(CString* url) const;
 
+  // Returns the url base for the app logos.
+  HRESULT GetAppLogoUrl(CString* url) const;
+
 #if defined(HAS_DEVICE_MANAGEMENT)
   // Returns the Device Management API url.
   HRESULT GetDeviceManagementUrl(CString* url) const;
@@ -317,11 +294,23 @@ class ConfigManager {
   CPath GetPolicyResponsesDir() const;
 #endif
 
+  // Loads policies for all the policy managers and sets up the policy managers
+  // in order of priority on the ConfigManager instance, which is used by the
+  // ConfigManager for subsequent config queries.
+  // This function can be called multiple times to reload policies.
+  // `should_acquire_critical_section` indicates whether the Group Policy
+  // critical section should be acquired before initializing the Group Policy
+  // manager. The caller should only set `should_acquire_critical_section` when
+  // not running under GPO, because GPO takes the critical section itself, and
+  // this can therefore result in a deadlock when this function tries to take
+  // the critical section.
+  HRESULT LoadPolicies(bool should_acquire_critical_section);
+
   // Sets the DM policies on the ConfigManager instance, which is used by the
   // ConfigManager for subsequent config queries.
   void SetOmahaDMPolicies(const CachedOmahaPolicy& dm_policy);
 
-  CachedOmahaPolicy dm_policy() { return dm_policy_manager_->dm_policy(); }
+  CachedOmahaPolicy dm_policy() { return dm_policy_manager_->policy(); }
 
   // Returns the time interval between update checks in seconds.
   // 0 indicates updates are disabled.
@@ -435,18 +424,20 @@ class ConfigManager {
   bool IsRollbackToTargetVersionAllowed(
       const GUID& app_guid, IPolicyStatusValue** policy_status_value) const;
 
-  // For domain-joined machines, checks the current time against the times that
-  // updates are suppressed. Updates are suppressed if the current time falls
+  // For domain-joined machines, checks the given `time` against the times that
+  // updates are suppressed. Updates are suppressed if the given `time` falls
   // between the start time and the duration.
   // The duration does not account for daylight savings time. For instance, if
   // the start time is 22:00 hours, and with a duration of 8 hours, the updates
   // will be suppressed for 8 hours regardless of whether daylight savings time
   // changes happen in between.
   HRESULT GetUpdatesSuppressedTimes(
+      const CTime& time,
       UpdatesSuppressedTimes* times,
       bool* are_updates_suppressed,
       IPolicyStatusValue** policy_status_value) const;
-  bool AreUpdatesSuppressedNow() const;
+  bool AreUpdatesSuppressedNow(
+      const CTime& now = CTime::GetCurrentTime()) const;
 
   // Returns true if installation of the specified app is allowed.
   bool CanInstallApp(const GUID& app_guid, bool is_machine) const;
@@ -459,6 +450,10 @@ class ConfigManager {
   // Returns true if crash uploading is allowed all the time, no matter the
   // build flavor or other configuration parameters.
   bool AlwaysAllowCrashUploads() const;
+
+  // Returns whether the Authenticode signature of update payloads should be
+  // verified.
+  bool ShouldVerifyPayloadAuthenticodeSignature() const;
 
   // Returns the number of crashes to upload per day.
   int MaxCrashUploadsPerDay() const;
@@ -495,6 +490,11 @@ class ConfigManager {
   static void DeleteInstance();
 
  private:
+  // Loads the Group policies from the registry and sets it up on the
+  // ConfigManager instance, which is used by the ConfigManager for subsequent
+  // config queries.
+  HRESULT LoadGroupPolicies(bool should_acquire_critical_section);
+
   static LLock lock_;
   static ConfigManager* config_manager_;
 
@@ -503,7 +503,9 @@ class ConfigManager {
   bool is_running_from_official_user_dir_;
   bool is_running_from_official_machine_dir_;
   std::vector<std::shared_ptr<PolicyManagerInterface>> policies_;  // NOLINT
-  std::shared_ptr<DMPolicyManager> dm_policy_manager_;  // NOLINT
+  std::shared_ptr<OmahaPolicyManager> group_policy_manager_;       // NOLINT
+  std::shared_ptr<OmahaPolicyManager> dm_policy_manager_;          // NOLINT
+  bool are_cloud_policies_preferred_;
 
   DISALLOW_COPY_AND_ASSIGN(ConfigManager);
 };

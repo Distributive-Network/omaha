@@ -34,12 +34,9 @@ namespace {
     _T("HKCU\\Software\\") PATH_COMPANY_NAME _T("\\") PRODUCT_NAME _T("\\")
 #define APP_ID1 _T("{DDE97E2B-A82C-4790-A630-FCA02F64E8BE}");
 const TCHAR* const kAppId1 = APP_ID1
-const TCHAR* const kAppId1ClientsKeyPathUser =
-    USER_UPDATE_KEY _T("Clients\\") APP_ID1;
 const TCHAR* const kAppId1ClientStateKeyPathUser =
     USER_UPDATE_KEY _T("ClientState\\") APP_ID1;
 const TCHAR* const kInstallPolicyApp1 = _T("Install") APP_ID1;
-const TCHAR* const kUpdatePolicyApp1 = _T("Update") APP_ID1;
 const TCHAR* const kAppDidRunValueName = _T("dr");
 
 }  // namespace
@@ -134,7 +131,7 @@ TEST_P(UpdateRequestUtilsTest,
        BuildRequest_UpdateCheck_GroupPolicy_InstallDisabled) {
   EXPECT_SUCCEEDED(app_->put_isEulaAccepted(VARIANT_TRUE));
 
-  SetPolicy(kInstallPolicyApp1, kPolicyDisabled);
+  SetEnrolledPolicy(kInstallPolicyApp1, kPolicyDisabled);
 
   BuildRequest(app_, true, update_request_.get());
 
@@ -157,8 +154,7 @@ TEST_P(UpdateRequestUtilsTest,
 
   const TCHAR* const kTargetVersionPrefixApp1 =
       _T("TargetVersionPrefix") APP_ID1;
-  RegKey::SetValue(kRegKeyGoopdateGroupPolicy,
-                   kTargetVersionPrefixApp1, _T("55.3"));
+  SetPolicyString(kTargetVersionPrefixApp1, _T("55.3"));
 
   BuildRequest(app_, true, update_request_.get());
 
@@ -176,15 +172,9 @@ TEST_P(UpdateRequestUtilsTest,
        BuildRequest_UpdateCheck_GroupPolicy_RollbackToTargetVersion) {
   EXPECT_SUCCEEDED(app_->put_isEulaAccepted(VARIANT_TRUE));
 
-  EXPECT_SUCCEEDED(RegKey::SetValue(MACHINE_REG_UPDATE_DEV,
-                                    kRegValueIsEnrolledToDomain,
-                                    IsDomain() ? 1UL : 0UL));
-
   const TCHAR* const kRollbackToTargetVersionApp1 =
       _T("RollbackToTargetVersion") APP_ID1;
-  RegKey::SetValue(kRegKeyGoopdateGroupPolicy,
-                   kRollbackToTargetVersionApp1,
-                   1UL);
+  SetEnrolledPolicy(kRollbackToTargetVersionApp1, 1UL);
 
   BuildRequest(app_, true, update_request_.get());
 
@@ -206,7 +196,7 @@ TEST_P(UpdateRequestUtilsTest,
                                     IsDomain() ? 1UL : 0UL));
 
   const TCHAR* const kTargetChannelApp1 = _T("TargetChannel") APP_ID1;
-  RegKey::SetValue(kRegKeyGoopdateGroupPolicy, kTargetChannelApp1, _T("beta"));
+  SetPolicyString(kTargetChannelApp1, _T("beta"));
 
   BuildRequest(app_, true, update_request_.get());
 

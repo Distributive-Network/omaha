@@ -37,7 +37,6 @@ namespace omaha {
 
 namespace {
 
-const LPCTSTR kEmptyStr = _T("");
 const DWORD kCertificateEncoding = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
 
 // Gets a handle to the certificate store and optionally the cryptographic
@@ -394,6 +393,7 @@ void CertList::FindFirstCert(const CertInfo** result_cert_info,
 }
 
 void ExtractAllCertificatesFromSignature(const wchar_t* signed_file,
+                                         const wchar_t* subject_name,
                                          CertList* cert_list) {
   if ((!signed_file) || (!cert_list))
     return;
@@ -416,9 +416,10 @@ void ExtractAllCertificatesFromSignature(const wchar_t* signed_file,
 
   if (succeeded && (cert_store != NULL)) {
     PCCERT_CONTEXT   cert_context_ptr = NULL;
-    while ((cert_context_ptr =
-            CertEnumCertificatesInStore(cert_store, cert_context_ptr))
-           != NULL) {
+    while ((cert_context_ptr = ::CertFindCertificateInStore(
+                cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0,
+                !subject_name ? CERT_FIND_ANY : CERT_FIND_SUBJECT_STR,
+                subject_name, cert_context_ptr)) != NULL) {
       CertInfo* cert_info = new CertInfo(cert_context_ptr);
       cert_list->AddCertificate(cert_info);
     }
@@ -437,7 +438,7 @@ HRESULT VerifyCertificate(const wchar_t* signed_file,
                           bool check_cert_is_valid_now,
                           const std::vector<CString>* expected_hashes) {
   CertList cert_list;
-  ExtractAllCertificatesFromSignature(signed_file, &cert_list);
+  ExtractAllCertificatesFromSignature(signed_file, NULL, &cert_list);
   if (cert_list.size() == 0) {
     return GOOPDATE_E_SIGNATURE_NOT_SIGNED;
   }

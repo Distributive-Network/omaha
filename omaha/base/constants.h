@@ -184,6 +184,7 @@ const TCHAR* const kChromeAppId = CHROME_APP_ID;
 #define OMAHA_REL_COMPANY_DIR PATH_COMPANY_NAME
 #define OMAHA_REL_CRASH_DIR OMAHA_REL_COMPANY_DIR _T("\\CrashReports")
 #define OMAHA_REL_POLICY_RESPONSES_DIR OMAHA_REL_COMPANY_DIR _T("\\Policies")
+#define OMAHA_REL_TEMP_DIR OMAHA_REL_COMPANY_DIR _T("\\Temp")
 
 // Directories relative to \Google\Update
 #define OMAHA_REL_GOOPDATE_INSTALL_DIR \
@@ -281,6 +282,7 @@ const TCHAR* const kRegValueNamePingUrl             = _T("PingUrl");
 const TCHAR* const kRegValueNameCrashReportUrl      = _T("CrashReportUrl");
 const TCHAR* const kRegValueNameGetMoreInfoUrl      = _T("MoreInfoUrl");
 const TCHAR* const kRegValueNameUsageStatsReportUrl = _T("UsageStatsReportUrl");
+const TCHAR* const kRegValueNameAppLogoUrl          = _T("AppLogoUrl");
 const TCHAR* const kRegValueTestSource              = _T("TestSource");
 const TCHAR* const kRegValueAuCheckPeriodMs         = _T("AuCheckPeriodMs");
 const TCHAR* const kRegValueCrCheckPeriodMs         = _T("CrCheckPeriodMs");
@@ -289,12 +291,26 @@ const TCHAR* const kRegValueProxyHost               = _T("ProxyHost");
 const TCHAR* const kRegValueProxyPort               = _T("ProxyPort");
 const TCHAR* const kRegValueMID                     = _T("mid");
 
+const TCHAR* const kRegValueDisablePayloadAuthenticodeVerification =
+    _T("DisablePayloadAuthenticodeVerification");
+
+// File extensions that can be verified with an Authenticode signature.
+const TCHAR* const kAuthenticodeVerifiableExtensions[] = {
+  _T("exe"),  _T("msi"),    _T("dll"),  _T("sys"),  _T("cab"), _T("ocx"),
+  _T("xpi"),  _T("xap"),    _T("cat"),  _T("jar"),  _T("ps1"), _T("psm1"),
+  _T("psd1"), _T("ps1xml"), _T("psc1"), _T("acm "), _T("ax"),  _T("cpl"),
+  _T("drv"),  _T("efi"),    _T("mui"),  _T("scr"),  _T("sys"), _T("tsp")
+};
+
 #if defined(HAS_DEVICE_MANAGEMENT)
 const TCHAR* const kRegValueNameDeviceManagementUrl = _T("DeviceManagementUrl");
 #endif
 
 // The values below can be overriden in unofficial builds.
 const TCHAR* const kRegValueNameWindowsInstalling = _T("WindowsInstalling");
+
+// Allows Omaha to log to %ALLUSERSPROFILE%\Google\Update\Log\GoogleUpdate.log.
+const TCHAR* const kRegValueIsEnabledLogToFile    = _T("IsEnabledLogToFile");
 
 // Allows Omaha to log events in the Windows Event Log. This is
 // a DWORD value 0: Log nothing, 1: Log warnings and errors, 2: Log everything.

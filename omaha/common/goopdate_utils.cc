@@ -17,7 +17,9 @@
 
 #include <ntddndis.h>
 #include <winioctl.h>
+#include <atlpath.h>
 #include <atlsecurity.h>
+#include <atlstr.h>
 
 #include "omaha/base/app_util.h"
 #include "omaha/base/const_addresses.h"
@@ -1393,18 +1395,21 @@ bool IsAppInstallWorkerRunning(bool is_machine) {
   return !processes.empty();
 }
 
-HRESULT WriteInstallerDataToTempFile(const CString& installer_data,
+HRESULT WriteInstallerDataToTempFile(const CPath& directory,
+                                     const CString& installer_data,
                                      CString* installer_data_file_path) {
   ASSERT1(installer_data_file_path);
 
+  CORE_LOG(L2, (_T("[WriteInstallerDataToTempFile][directory=%s][data=%s]"),
+                directory.m_strPath, installer_data));
+
   // TODO(omaha): consider eliminating the special case and simply create an
   // empty file.
-  CORE_LOG(L2, (_T("[WriteInstallerDataToTempFile][data=%s]"), installer_data));
-  if (installer_data.IsEmpty()) {
+  if (!directory.IsDirectory() || installer_data.IsEmpty()) {
     return S_FALSE;
   }
 
-  CString temp_file = GetTempFilename(_T("gui"));
+  CString temp_file = GetTempFilenameAt(directory, _T("gui"));
   if (temp_file.IsEmpty()) {
     HRESULT hr = HRESULTFromLastError();
     CORE_LOG(LE, (_T("[::GetTempFilename failed][0x08%x]"), hr));
@@ -1447,14 +1452,15 @@ DEFINE_METRIC_integer(last_checked);
 HRESULT UpdateLastChecked(bool is_machine) {
   // Set the last check value to the current value.
   DWORD now = Time64ToInt32(GetCurrent100NSTime());
-  CORE_LOG(L3, (_T("[UpdateLastChecked][now %d]"), now));
 
   metric_last_checked = now;
   HRESULT hr = ConfigManager::Instance()->SetLastCheckedTime(is_machine, now);
   if (FAILED(hr)) {
-    CORE_LOG(LE, (_T("[SetLastCheckedTime failed][0x%08x]"), hr));
+    OPT_LOG(LE, (_T("[SetLastCheckedTime failed][0x%08x]"), hr));
     return hr;
   }
+
+  OPT_LOG(L1, (_T("[UpdateLastChecked][now %d]"), now));
   return S_OK;
 }
 

@@ -716,6 +716,7 @@ HRESULT GetCachedOmahaPolicy(const std::string& raw_response,
                              CachedOmahaPolicy* info) {
   ASSERT1(info);
 
+  info->is_managed = false;
   info->is_initialized = false;
 
   enterprise_management::PolicyFetchResponse response;
@@ -728,6 +729,7 @@ HRESULT GetCachedOmahaPolicy(const std::string& raw_response,
     return E_UNEXPECTED;
   }
 
+  info->is_managed = true;
   info->is_initialized = true;
 
   if (omaha_settings.has_auto_update_check_period_minutes()) {
@@ -1029,6 +1031,21 @@ HRESULT ParseDeviceManagementResponseError(const std::vector<uint8>& response,
   error_message->SetString(message.data(), static_cast<int>(message.size()));
 
   return S_OK;
+}
+
+bool ShouldDeleteDmToken(const std::vector<uint8>& response) {
+  enterprise_management::DeviceManagementResponse dm_response;
+  if (response.size() > std::numeric_limits<size_t>::max() ||
+      !dm_response.ParseFromArray(response.data(),
+                                  static_cast<int>(response.size()))) {
+    return false;
+  }
+
+  return std::find(dm_response.error_detail().begin(),
+                   dm_response.error_detail().end(),
+                   enterprise_management::
+                       CBCM_DELETION_POLICY_PREFERENCE_DELETE_TOKEN) !=
+         dm_response.error_detail().end();
 }
 
 }  // namespace omaha

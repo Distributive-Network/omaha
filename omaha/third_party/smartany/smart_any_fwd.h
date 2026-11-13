@@ -146,13 +146,13 @@ namespace detail
     typedef char (&yes)[1];
     typedef char (&no) [2];
 
-    struct dummy_struct
+    struct sample_struct
     {
-        void dummy_method() {}
+        void sample_method() {}
     };
 
-    typedef void (dummy_struct::*safe_bool)();
-    safe_bool const safe_true  = &dummy_struct::dummy_method;
+    typedef void (sample_struct::*safe_bool)();
+    safe_bool const safe_true  = &sample_struct::sample_method;
     safe_bool const safe_false = 0;
 
     // Because of older compilers, we can't always use
@@ -188,7 +188,7 @@ namespace detail
         template<typename T>
         struct inner
         {
-            static T const get()
+            static T get()
             {
                 return static_init<T>::value;
             }
@@ -201,7 +201,7 @@ namespace detail
         template<typename T>
         struct inner
         {
-            static T const get()
+            static T get()
             {
                 return 0;
             }
@@ -370,7 +370,7 @@ namespace detail
         static bool const value = true;
     };
 
-    // dummy type, don't define
+    // sample type, don't define
     struct smart_any_cannot_dereference;
 
     // For use in implementing unary operator*
@@ -720,7 +720,7 @@ struct null_t
 template<typename T,T value>
 struct value_const
 {
-    operator T const() const
+    operator T () const
     {
         return value;
     }

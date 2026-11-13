@@ -52,15 +52,9 @@ namespace {
 const TCHAR* const kGuid1 = _T("{8A001254-1003-465e-A970-0748961C5293}");
 const TCHAR* const kGuid2 = _T("{058ADDBE-BF10-4ba1-93C0-6F4A52C03C7E}");
 #else
-const TCHAR* const kGuid1 = _T("{104844D6-7DDA-460B-89F0-FBF8AFDD0A67}");
+const TCHAR* const kGuid1 = _T("{65E60E95-0DE9-43FF-9F3F-4F7D2DFF04B5}");
 const TCHAR* const kGuid2 = _T("{8A69D345-D564-463C-AFF1-A69D9E530F96}");
 #endif
-
-// The alphabetical order of these is important for
-// RecordUpdateAvailableUsageStatsTest.
-const TCHAR* const kApp1 = _T("{0C480772-AC73-418f-9603-66303DA4C7AA}");
-const TCHAR* const kApp2 = _T("{89906BCD-4D12-4c9b-B5BA-8286051CB8D9}");
-const TCHAR* const kApp3 = _T("{F5A1FE97-CF5A-47b8-8B28-2A72F9A57A45}");
 
 const uint64 kApp1GuidUpper = 0x0C480772AC73418f;
 const uint64 kApp2GuidUpper = 0x89906BCD4D124c9b;
@@ -157,8 +151,8 @@ class MockDownloadManager : public DownloadManagerInterface {
       HRESULT());
   MOCK_METHOD2(PurgeAppLowerVersions,
       HRESULT(const CString&, const CString&));
-  MOCK_METHOD2(CachePackage,
-      HRESULT(const Package*, File*));
+  MOCK_METHOD3(CachePackage,
+      HRESULT(const Package*, File*, const CString*));
   MOCK_METHOD1(DownloadApp,
       HRESULT(App* app));
   MOCK_METHOD1(DownloadPackage,
@@ -424,7 +418,7 @@ TEST_F(WorkerMockedManagersTest, DownloadAsync) {
   SetAppStateUpdateAvailable(app2_);
 
   {
-    ::testing::InSequence dummy;
+    ::testing::InSequence order_is_guaranteed;
     EXPECT_CALL(*mock_download_manager_, DownloadApp(app1_))
         .WillOnce(SimulateDownloadAppStateTransition());
     EXPECT_CALL(*mock_download_manager_, DownloadApp(app2_))
@@ -457,7 +451,7 @@ TEST_F(WorkerMockedManagersTest, DownloadAndInstallAsync_AlreadyDownloaded) {
       .WillRepeatedly(Return(app_util::GetTempDir()));
 
   {
-    ::testing::InSequence dummy;
+    ::testing::InSequence order_is_guaranteed;
     EXPECT_CALL(*mock_install_manager_, InstallApp(app1_, _))
         .WillOnce(SimulateInstallAppStateTransition());
     EXPECT_CALL(*mock_install_manager_, InstallApp(app2_, _))
@@ -488,7 +482,7 @@ TEST_F(WorkerMockedManagersTest, DownloadAndInstallAsync_NotAlreadyDownloaded) {
       .WillRepeatedly(Return(app_util::GetTempDir()));
 
   {
-    ::testing::InSequence dummy;
+    ::testing::InSequence order_is_guaranteed;
     EXPECT_CALL(*mock_download_manager_, DownloadApp(app1_))
         .WillOnce(SimulateDownloadAppStateTransition());
     EXPECT_CALL(*mock_install_manager_, InstallApp(app1_, _))
@@ -520,7 +514,7 @@ TEST_F(WorkerMockedManagersTest, DownloadAsync_Then_DownloadAndInstallAsync) {
   SetAppStateUpdateAvailable(app2_);
 
   {
-    ::testing::InSequence dummy;
+    ::testing::InSequence order_is_guaranteed;
     EXPECT_CALL(*mock_download_manager_, DownloadApp(app1_))
         .WillOnce(SimulateDownloadAppStateTransition());
     EXPECT_CALL(*mock_download_manager_, DownloadApp(app2_))
@@ -546,7 +540,7 @@ TEST_F(WorkerMockedManagersTest, DownloadAsync_Then_DownloadAndInstallAsync) {
       .WillRepeatedly(Return(app_util::GetTempDir()));
 
   {
-    ::testing::InSequence dummy;
+    ::testing::InSequence order_is_guaranteed;
     EXPECT_CALL(*mock_install_manager_, InstallApp(app1_, _))
         .WillOnce(SimulateInstallAppStateTransition());
     EXPECT_CALL(*mock_install_manager_, InstallApp(app2_, _))

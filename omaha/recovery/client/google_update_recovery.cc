@@ -52,7 +52,6 @@ const TCHAR* const kQueryStringFormat =
 // Information about where to obtain Omaha info.
 // This must never change in Omaha.
 const TCHAR* const kRegValueProductVersion  = _T("pv");
-const TCHAR* const kRelativeGoopdateRegPath = _T("Software\\") PATH_COMPANY_NAME _T("\\Update\\");
 const TCHAR* const kRelativeClientsGoopdateRegPath =
     _T("Software\\") PATH_COMPANY_NAME _T("\\Update\\Clients\\")
     GOOPDATE_APP_ID;
@@ -589,7 +588,7 @@ HRESULT ValidateAndUnpackCRX(const CPath& from_crx_path,
   }
 
   CPath exe = unpack_under_path;
-  exe += _T("GoogleUpdateSetup.exe");
+  exe += MAIN_EXE_BASE_NAME _T("Setup.exe");
   if (!exe.FileExists()) {
     return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
   }

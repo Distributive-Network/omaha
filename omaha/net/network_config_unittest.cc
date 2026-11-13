@@ -184,7 +184,9 @@ TEST_F(NetworkConfigTest, ConfigurationOverride) {
   EXPECT_EQ(E_FAIL, network_config->GetConfigurationOverride(&actual));
 }
 
-TEST_F(NetworkConfigTest, GetProxyForUrlLocal) {
+// This test fails on and after Win 11 because ::InternetGetProxyInfo() is
+// no longer supported.
+TEST_F(NetworkConfigTest, DISABLED_GetProxyForUrlLocal) {
   CString pac_file_path = app_util::GetModuleDirectory(NULL);
   ASSERT_FALSE(pac_file_path.IsEmpty());
   pac_file_path.Append(_T("\\unittest_support\\localproxytest.pac"));
@@ -242,15 +244,11 @@ class NetworkConfigPolicyTest :
                                       kRegValueIsEnrolledToDomain,
                                       IsDomain() ? 1UL : 0UL));
     if (IsDomain()) {
-      RegKey::SetValue(kRegKeyGoopdateGroupPolicy,
-                       kRegValueProxyMode,
-                       kProxyModeAutoDetect);
+      SetPolicyString(kRegValueProxyMode, kProxyModeAutoDetect);
     }
 
     if (IsCloudPolicyOverridesPlatformPolicy()) {
-      RegKey::SetValue(kRegKeyGoopdateGroupPolicy,
-                       kRegValueCloudPolicyOverridesPlatformPolicy,
-                       1UL);
+      SetPolicy(kRegValueCloudPolicyOverridesPlatformPolicy, 1UL);
     }
 
     // Delete the ConfigManager instance so it is recreated, since the registry
@@ -260,6 +258,7 @@ class NetworkConfigPolicyTest :
 
     if (IsDM()) {
       CachedOmahaPolicy info;
+      info.is_managed = true;
       info.is_initialized = true;
       info.proxy_mode = kProxyModePacScript;
       info.proxy_pac_url = _T("https://PS/");

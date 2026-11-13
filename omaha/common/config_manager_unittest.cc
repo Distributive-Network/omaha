@@ -56,21 +56,10 @@ const TCHAR* const kAppMachineClientStatePath2 =
 const TCHAR* const kAppUserClientStatePath2 =
     _T("HKCU\\") OMAHA_KEY_REL _T("\\ClientState\\") APP_GUID2;
 
-const TCHAR* const kPolicyKey =
-    _T("HKLM\\Software\\Policies\\")
-    PATH_COMPANY_NAME _T("\\") PRODUCT_NAME _T("\\");
 const TCHAR* const kInstallPolicyApp1 = _T("Install") APP_GUID1;
 const TCHAR* const kInstallPolicyApp2 = _T("Install") APP_GUID2;
 const TCHAR* const kUpdatePolicyApp1 = _T("Update") APP_GUID1;
 const TCHAR* const kUpdatePolicyApp2 = _T("Update") APP_GUID2;
-
-HRESULT SetPolicy(const TCHAR* policy_name, DWORD value) {
-  return RegKey::SetValue(kPolicyKey, policy_name, value);
-}
-
-HRESULT SetPolicyString(const TCHAR* policy_name, const CString& value) {
-  return RegKey::SetValue(kPolicyKey, policy_name, value);
-}
 
 #if defined(HAS_DEVICE_MANAGEMENT)
 
@@ -135,8 +124,8 @@ class ConfigManagerNoOverrideTest : public testing::Test {
     return cm_->IsRollbackToTargetVersionAllowed(StringToGuid(guid), NULL);
   }
 
-  bool AreUpdatesSuppressedNow() {
-    return cm_->AreUpdatesSuppressedNow();
+  bool AreUpdatesSuppressedNow(const CTime& now = CTime::GetCurrentTime()) {
+    return cm_->AreUpdatesSuppressedNow(now);
   }
 
   DWORD GetForceInstallApps(bool is_machine, std::vector<CString>* app_ids) {
@@ -230,6 +219,7 @@ class ConfigManagerTest
 
   void SetCannedCachedOmahaPolicy() {
     CachedOmahaPolicy info;
+    info.is_managed = true;
     info.is_initialized = true;
     info.auto_update_check_period_minutes = 111;
     info.download_preference = kDownloadPreferenceCacheable;
@@ -424,8 +414,8 @@ TEST_F(ConfigManagerNoOverrideTest, RegistryKeys) {
 }
 
 TEST_F(ConfigManagerNoOverrideTest, GetUserCrashReportsDir) {
-  const CString expected_path = GetGoogleUserPath() + _T("CrashReports");
-  EXPECT_SUCCEEDED(DeleteTestDirectory(expected_path));
+  const CString expected_path = app_util::GetTempDir();
+  EXPECT_FALSE(expected_path.IsEmpty());
   EXPECT_STREQ(expected_path, cm_->GetUserCrashReportsDir());
   EXPECT_TRUE(File::Exists(expected_path));
 }
@@ -470,11 +460,18 @@ TEST_F(ConfigManagerNoOverrideTest, GetTempDownloadDir) {
 }
 
 TEST_F(ConfigManagerNoOverrideTest, GetMachineCrashReportsDir) {
-  CString program_files;
-  EXPECT_SUCCEEDED(GetFolderPath(CSIDL_PROGRAM_FILES, &program_files));
-  const CString expected_path =
-      program_files + _T("\\") + PATH_COMPANY_NAME + _T("\\CrashReports");
-  EXPECT_SUCCEEDED(DeleteTestDirectory(expected_path));
+  CString windir;
+  EXPECT_SUCCEEDED(GetFolderPath(CSIDL_WINDOWS, &windir));
+  CString expected_path = windir + _T("\\SystemTemp");
+
+  if (!File::IsDirectory(expected_path)) {
+    CString program_files;
+    EXPECT_SUCCEEDED(GetFolderPath(CSIDL_PROGRAM_FILES, &program_files));
+    expected_path =
+        program_files + _T("\\") + PATH_COMPANY_NAME + _T("\\Temp");
+    EXPECT_SUCCEEDED(DeleteTestDirectory(expected_path));
+  }
+
   EXPECT_STREQ(expected_path, cm_->GetMachineCrashReportsDir());
   EXPECT_TRUE(File::Exists(expected_path) || !vista_util::IsUserAdmin());
 }
@@ -505,6 +502,31 @@ TEST_F(ConfigManagerNoOverrideTest, GetMachineSecureOfflineStorageDir) {
   EXPECT_SUCCEEDED(DeleteTestDirectory(expected_path));
   EXPECT_STREQ(expected_path, cm_->GetMachineSecureOfflineStorageDir());
   EXPECT_TRUE(File::Exists(expected_path) || !vista_util::IsUserAdmin());
+}
+
+TEST_F(ConfigManagerNoOverrideTest, GetTempDir) {
+  CString expected_path;
+
+  if (::IsUserAnAdmin()) {
+    CString windir;
+    EXPECT_SUCCEEDED(GetFolderPath(CSIDL_WINDOWS, &windir));
+    expected_path = windir + _T("\\SystemTemp");
+
+    if (!File::IsDirectory(expected_path)) {
+      CString program_files;
+      EXPECT_SUCCEEDED(GetFolderPath(CSIDL_PROGRAM_FILES, &program_files));
+      expected_path = program_files + _T("\\") +
+                      PATH_COMPANY_NAME +
+                      _T("\\Temp");
+      EXPECT_SUCCEEDED(DeleteTestDirectory(expected_path));
+    }
+  } else {
+    expected_path = app_util::GetTempDirForImpersonatedOrCurrentUser();
+  }
+
+  ASSERT_FALSE(expected_path.IsEmpty());
+  EXPECT_STREQ(expected_path, cm_->GetTempDir());
+  EXPECT_TRUE(File::Exists(expected_path));
 }
 
 TEST_F(ConfigManagerNoOverrideTest, IsRunningFromMachineGoopdateInstallDir) {
@@ -585,6 +607,20 @@ TEST_P(ConfigManagerTest, GetUsageStatsReportUrl) {
   url.Empty();
   EXPECT_SUCCEEDED(cm_->GetUsageStatsReportUrl(&url));
   EXPECT_STREQ(url, _T("http://usagestatsreport/"));
+}
+
+// Tests the `GetAppLogoUrl` override.
+TEST_P(ConfigManagerTest, GetAppLogoUrl) {
+  CString url;
+  EXPECT_SUCCEEDED(cm_->GetAppLogoUrl(&url));
+  EXPECT_STREQ(url, kUrlAppLogo);
+
+  EXPECT_SUCCEEDED(RegKey::SetValue(MACHINE_REG_UPDATE_DEV,
+                                    kRegValueNameAppLogoUrl,
+                                    _T("http://applogo/")));
+  url.Empty();
+  EXPECT_SUCCEEDED(cm_->GetAppLogoUrl(&url));
+  EXPECT_STREQ(url, _T("http://applogo/"));
 }
 
 // Tests LastCheckPeriodSec override.
@@ -1925,6 +1961,49 @@ TEST_P(ConfigManagerTest, AreUpdatesSuppressedNow) {
                              now.GetMinute()));
   EXPECT_SUCCEEDED(SetPolicy(kRegValueUpdatesSuppressedDurationMin, 180));
   EXPECT_EQ(IsDomain() || IsDM(), AreUpdatesSuppressedNow());
+}
+
+TEST_P(ConfigManagerTest, AreUpdatesSuppressedNow_MultipleValues) {
+  const struct {
+    const DWORD suppress_start_hour;
+    const DWORD suppress_start_minute;
+    const DWORD suppress_duration_minutes;
+    const CTime now;
+    bool expect_updates_suppressed;
+  } test_cases[] = {
+      // Suppress starting 12:00 for 959 minutes. `now` is July 1, 2023, 01:15.
+      {12, 00, 959, {2023, 7, 01, 01, 15, 00}, IsDomainPredominant()},
+
+      // Suppress starting 12:00 for 959 minutes. `now` is July 1, 2023, 04:15.
+      {12, 00, 959, {2023, 7, 01, 04, 15, 00}, false},
+
+      // Suppress starting 00:00 for 959 minutes. `now` is July 1, 2023, 04:15.
+      {00, 00, 959, {2023, 7, 01, 04, 15, 00}, IsDomainPredominant()},
+
+      // Suppress starting 00:00 for 959 minutes. `now` is July 1, 2023, 16:15.
+      {00, 00, 959, {2023, 7, 01, 16, 15, 00}, false},
+
+      // Suppress starting 18:00 for 12 hours. `now` is July 1, 2023, 05:15.
+      {
+       18, 00, 12 * kMinPerHour,
+       {2023, 7, 01, 5, 15, 00},
+       IsDomainPredominant()
+      },
+
+      // Suppress starting 18:00 for 12 hours. `now` is July 1, 2023, 06:15.
+      {18, 00, 12 * kMinPerHour, {2023, 7, 01, 6, 15, 00}, false},
+  };
+
+  for (const auto& test_case : test_cases) {
+    EXPECT_SUCCEEDED(SetPolicy(kRegValueUpdatesSuppressedStartHour,
+                               test_case.suppress_start_hour));
+    EXPECT_SUCCEEDED(SetPolicy(kRegValueUpdatesSuppressedStartMin,
+                               test_case.suppress_start_minute));
+    EXPECT_SUCCEEDED(SetPolicy(kRegValueUpdatesSuppressedDurationMin,
+                               test_case.suppress_duration_minutes));
+    EXPECT_EQ(test_case.expect_updates_suppressed && (IsDomain() || IsDM()),
+              AreUpdatesSuppressedNow(test_case.now));
+  }
 }
 
 TEST_P(ConfigManagerTest, GetPackageCacheSizeLimitMBytes_Default) {

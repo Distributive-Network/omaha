@@ -14,7 +14,7 @@
 # limitations under the License.
 # ========================================================================
 
-# We always build the shell as GoogleUpdate_signed.exe.
+# We always build the shell as DistributiveUpdate_signed.exe.
 # For official builds, we copy the saved constant shell to the output directory.
 # For unofficial builds, we copy the built shell.
 # Otherwise, the goopdate.dll certificate check fails.
@@ -94,7 +94,7 @@ unsigned_exe_output = exe_env.ComponentProgram(
     source=exe_inputs,
 )
 
-sign_output = env.DualSignedBinary(
+sign_output = env.SignedBinary(
     target='DistributiveUpdate_signed.exe',
     source=unsigned_exe_output,
 )

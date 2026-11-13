@@ -14,14 +14,17 @@
 
 #include "omaha/common/scheduled_task_utils.h"
 #include "omaha/common/scheduled_task_utils_internal.h"
-#include <lmcons.h>
-#include <lmsname.h>
+
 #include <atlsecurity.h>
 #include <atltime.h>
+#include <lmcons.h>
+#include <lmsname.h>
+
 #include "omaha/base/debug.h"
 #include "omaha/base/error.h"
 #include "omaha/base/logging.h"
 #include "omaha/base/omaha_version.h"
+#include "omaha/base/path.h"
 #include "omaha/base/safe_format.h"
 #include "omaha/base/scoped_ptr_cotask.h"
 #include "omaha/base/service_utils.h"
@@ -43,6 +46,21 @@ namespace omaha {
 namespace scheduled_task_utils {
 
 namespace internal {
+
+namespace {
+
+CString GenerateRandName(const TCHAR* name_prefix) {
+  CString guid;
+  if (FAILED(GetGuid(&guid))) {
+    return CString();
+  }
+
+  CString rand_name;
+  SafeCStringFormat(&rand_name, _T("%s%s"), name_prefix, guid);
+  return rand_name;
+}
+
+}  // namespace
 
 V1ScheduledTasks::V1ScheduledTasks() {
   CORE_LOG(L1, (_T("[V1ScheduledTasks::V1ScheduledTasks]")));
@@ -334,7 +352,10 @@ HRESULT V1ScheduledTasks::CreateScheduledTask(ITask* task,
   UTIL_LOG(L3, (_T("[CreateScheduledTask][%s][%s][%d]"),
                 task_path, task_parameters, is_machine));
 
-  HRESULT hr = task->SetApplicationName(task_path);
+  CString quoted_task_path(task_path);
+  EnclosePath(&quoted_task_path);
+
+  HRESULT hr = task->SetApplicationName(quoted_task_path);
   if (FAILED(hr)) {
     UTIL_LOG(LE, (_T("[ITask.SetApplicationName failed][0x%x]"), hr));
     return hr;
@@ -755,8 +776,12 @@ HRESULT V2ScheduledTasks::CreateScheduledTaskXml(
     principal_attributes = _T("<LogonType>InteractiveToken</LogonType>\n");
   }
 
+  CString quoted_task_path(task_path);
+  EnclosePath(&quoted_task_path);
+
   CString task_xml;
-  SafeCStringFormat(&task_xml,
+  SafeCStringFormat(
+      &task_xml,
       _T("<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n")
       _T("<Task version=\"1.2\"\n")
       _T("  xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\n")
@@ -783,8 +808,12 @@ HRESULT V2ScheduledTasks::CreateScheduledTaskXml(
       _T("  <Settings>\n")
       _T("    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>\n")
       _T("    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>\n")
+      _T("    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>\n")
       _T("    <StartWhenAvailable>true</StartWhenAvailable>\n")
       _T("    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>\n")
+      _T("    <IdleSettings>\n")
+      _T("      <StopOnIdleEnd>false</StopOnIdleEnd>\n")
+      _T("    </IdleSettings>\n")
       _T("    <Enabled>true</Enabled>\n")
       _T("    <RunOnlyIfIdle>false</RunOnlyIfIdle>\n")
       _T("    <WakeToRun>false</WakeToRun>\n")
@@ -804,7 +833,7 @@ HRESULT V2ScheduledTasks::CreateScheduledTaskXml(
       hourly_trigger,
       user_id,
       principal_attributes,
-      task_path,
+      quoted_task_path,
       task_parameters);
 
   *scheduled_task_xml = task_xml;
@@ -1013,19 +1042,6 @@ CString GetCurrentTaskNameCore(bool is_machine) {
                                                  default_name);
 }
 
-HRESULT CreateAndSetVersionedTaskNameCoreInRegistry(
-    bool is_machine) {
-  UTIL_LOG(L3, (_T("[CreateAndSetVersionedTaskNameCoreInRegistry][%d]"),
-                is_machine));
-
-  CString default_name(GetDefaultGoopdateTaskName(is_machine,
-                                                  COMMANDLINE_MODE_CORE));
-  return goopdate_utils::CreateAndSetVersionedNameInRegistry(
-             is_machine,
-             default_name,
-             kRegValueTaskNameC);
-}
-
 CString GetCurrentTaskNameUA(bool is_machine) {
   UTIL_LOG(L3, (_T("[GetCurrentTaskNameUA][%d]"), is_machine));
 
@@ -1036,16 +1052,27 @@ CString GetCurrentTaskNameUA(bool is_machine) {
                                                  default_name);
 }
 
-HRESULT CreateAndSetVersionedTaskNameUAInRegistry(bool machine) {
-  UTIL_LOG(L3, (_T("[CreateAndSetVersionedTaskNameUAInRegistry][%d]"),
-                machine));
+CString CreateRandomTaskName(bool is_machine, CommandLineMode mode) {
+  UTIL_LOG(L3, (_T("[CreateRandomTaskName][%d][%d]"), is_machine, mode));
 
-  CString default_name(GetDefaultGoopdateTaskName(machine,
-                                                  COMMANDLINE_MODE_UA));
-  return goopdate_utils::CreateAndSetVersionedNameInRegistry(
-             machine,
-             default_name,
-             kRegValueTaskNameUA);
+  CString prefix(GetDefaultGoopdateTaskName(is_machine, mode));
+  CString name(GenerateRandName(prefix));
+  UTIL_LOG(L3, (_T("[Random name][%s]"), name));
+
+  return name;
+}
+
+HRESULT SetTaskNameInRegistry(bool is_machine,
+                              CommandLineMode mode,
+                              const CString& name) {
+  UTIL_LOG(L3, (_T("[SetTaskNameInRegistry][%d][%d][%s]"),
+                is_machine, mode, name));
+
+  const TCHAR* key_name = is_machine ? MACHINE_REG_UPDATE : USER_REG_UPDATE;
+  const TCHAR* key_value = mode == COMMANDLINE_MODE_CORE ?
+                               kRegValueTaskNameC :
+                               kRegValueTaskNameUA;
+  return RegKey::SetValue(key_name, key_value, name);
 }
 
 // Returns the task name Omaha used to install in Omaha 1.2.x.
@@ -1138,7 +1165,10 @@ HRESULT InstallGoopdateTaskForMode(const CString& task_path,
   CString task_name(mode == COMMANDLINE_MODE_CORE ?
                     internal::GetCurrentTaskNameCore(is_machine) :
                     internal::GetCurrentTaskNameUA(is_machine));
-  HRESULT hr = internal::Instance().InstallScheduledTask(
+
+  if (internal::Instance().IsInstalledScheduledTask(task_name)) {
+    // Update the currently installed scheduled task.
+    HRESULT hr = internal::Instance().InstallScheduledTask(
                                         task_name,
                                         task_path,
                                         task_parameters,
@@ -1147,32 +1177,35 @@ HRESULT InstallGoopdateTaskForMode(const CString& task_path,
                                         mode == COMMANDLINE_MODE_CORE &&
                                         is_machine,
                                         mode == COMMANDLINE_MODE_UA);
-
-  if (SUCCEEDED(hr)) {
-    return hr;
+    if (SUCCEEDED(hr)) {
+      return hr;
+    }
   }
 
   // Create a new task name and fall through to install that.
-  if (mode == COMMANDLINE_MODE_CORE) {
-    VERIFY_SUCCEEDED(
-    internal::CreateAndSetVersionedTaskNameCoreInRegistry(is_machine));
-    task_name = internal::GetCurrentTaskNameCore(is_machine);
-  } else {
-    VERIFY_SUCCEEDED(
-    internal::CreateAndSetVersionedTaskNameUAInRegistry(is_machine));
-    task_name = internal::GetCurrentTaskNameUA(is_machine);
+  task_name = internal::CreateRandomTaskName(is_machine, mode);
+  if (task_name.IsEmpty()) {
+    return E_UNEXPECTED;
   }
+
   ASSERT1(!internal::Instance().IsInstalledScheduledTask(task_name));
 
-  return internal::Instance().InstallScheduledTask(
-                                  task_name,
-                                  task_path,
-                                  task_parameters,
-                                  task_description,
-                                  is_machine,
-                                  mode == COMMANDLINE_MODE_CORE &&
-                                  is_machine,
-                                  mode == COMMANDLINE_MODE_UA);
+  HRESULT hr = internal::Instance().InstallScheduledTask(
+                   task_name,
+                   task_path,
+                   task_parameters,
+                   task_description,
+                   is_machine,
+                   mode == COMMANDLINE_MODE_CORE &&
+                   is_machine,
+                   mode == COMMANDLINE_MODE_UA);
+  if (SUCCEEDED(hr)) {
+    VERIFY_SUCCEEDED(internal::SetTaskNameInRegistry(is_machine,
+                                                     mode,
+                                                     task_name));
+  }
+
+  return hr;
 }
 
 HRESULT InstallGoopdateTasks(const CString& task_path, bool is_machine) {

@@ -285,9 +285,9 @@ class GoopdateImpl {
   // or the app and there are no other apps registered.
   HRESULT UninstallIfNecessary();
 
-  // Use PROCESS_MODE_BACKGROUND_BEGIN for processes that do background work.
-  bool ShouldSetBackgroundPriority(CommandLineMode mode);
-  HRESULT SetBackgroundPriorityIfNeeded(CommandLineMode mode);
+  // Use BELOW_NORMAL_PRIORITY_CLASS for processes that do background work.
+  bool ShouldSetBelowNormalPriority(CommandLineMode mode);
+  HRESULT SetBelowNormalPriorityIfNeeded(CommandLineMode mode);
 
   HRESULT CaptureUserMetrics();
 
@@ -720,9 +720,7 @@ HRESULT GoopdateImpl::InitializeGoopdateAndLoadResources() {
 #if defined(HAS_DEVICE_MANAGEMENT)
 
   CachedOmahaPolicy dm_policy;
-  hr = DmStorage::ReadCachedOmahaPolicy(
-      ConfigManager::Instance()->GetPolicyResponsesDir(),
-      &dm_policy);
+  hr = DmStorage::Instance()->ReadCachedOmahaPolicy(&dm_policy);
   if (FAILED(hr)) {
     OPT_LOG(LE, (_T("[ReadCachedOmahaPolicy failed][%#x]"), hr));
   } else {
@@ -763,7 +761,7 @@ HRESULT GoopdateImpl::ExecuteMode(bool* has_ui_been_displayed) {
 
   ASSERT1(CheckRegisteredVersion(GetVersionString(), is_machine_, mode));
 
-  VERIFY_SUCCEEDED(SetBackgroundPriorityIfNeeded(mode));
+  VERIFY_SUCCEEDED(SetBelowNormalPriorityIfNeeded(mode));
 
 #pragma warning(push)
 // C4061: enumerator 'xxx' in switch of enum 'yyy' is not explicitly handled by
@@ -1277,6 +1275,7 @@ HRESULT GoopdateImpl::DoHandoff(bool* has_ui_been_displayed) {
 
   hr = InstallApps(is_machine_,
                    !args_.is_silent_set,  // is_interactive.
+                   args_.is_always_launch_cmd_set,
                    !args_.is_eula_required_set,  // is_eula_accepted.
                    args_.is_oem_set,
                    args_.is_offline_set,
@@ -1501,7 +1500,7 @@ HRESULT GoopdateImpl::UninstallIfNecessary() {
   }
 }
 
-bool GoopdateImpl::ShouldSetBackgroundPriority(CommandLineMode mode) {
+bool GoopdateImpl::ShouldSetBelowNormalPriority(CommandLineMode mode) {
   switch (mode) {
     // Modes that should be mindful about impacting foreground processes.
     case COMMANDLINE_MODE_REPORTCRASH:
@@ -1541,16 +1540,14 @@ bool GoopdateImpl::ShouldSetBackgroundPriority(CommandLineMode mode) {
   }
 }
 
-HRESULT GoopdateImpl::SetBackgroundPriorityIfNeeded(CommandLineMode mode) {
-  if (!ShouldSetBackgroundPriority(mode)) {
+HRESULT GoopdateImpl::SetBelowNormalPriorityIfNeeded(CommandLineMode mode) {
+  if (!ShouldSetBelowNormalPriority(mode)) {
     return S_FALSE;
   }
 
-  const DWORD priority =
-      vista_util::IsVistaOrLater() ? PROCESS_MODE_BACKGROUND_BEGIN :
-                                     BELOW_NORMAL_PRIORITY_CLASS;
-  const BOOL succeeded = ::SetPriorityClass(::GetCurrentProcess(), priority);
-  return succeeded ? S_OK : HRESULTFromLastError();
+  return ::SetPriorityClass(::GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS)
+             ? S_OK
+             : HRESULTFromLastError();
 }
 
 HRESULT GoopdateImpl::InstallExceptionHandler() {

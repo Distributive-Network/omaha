@@ -552,6 +552,7 @@ HRESULT AppManager::ReadAppDefinedAttributeSubkeys(
 //    ping_freshness
 //  ClientState and ClientStateMedium key
 //    eulaaccepted
+//    usagestats
 //  ClientState key in HKCU/HKLM/Low integrity
 //    did run
 //
@@ -732,7 +733,24 @@ HRESULT AppManager::ReadAppPersistentData(App* app) {
     app->ping_freshness_ = ping_freshness;
   }
 
+  app->usage_stats_enable_ = GetAppUsageStatsEnabled(app_guid);
+
   return S_OK;
+}
+
+void AppManager::ReadFirstInstallAppVersion(App* app) {
+  ASSERT1(app);
+
+  CString pv;
+  app_registry_utils::GetAppVersion(is_machine_, app->app_guid_string(), &pv);
+
+  if (!pv.IsEmpty()) {
+    // Because this is an overinstall, we always want the latest version served
+    // back from the server, so prefix a negative sign to allow the server to
+    // ignore the version for comparisons.
+    pv.Insert(0, _T('-'));
+    app->current_version()->set_version(pv);
+  }
 }
 
 void AppManager::ReadAppInstallTimeDiff(App* app) {
@@ -1429,6 +1447,19 @@ uint32 AppManager::GetDayOfInstall(const GUID& app_guid) const {
   // No DayOfInstall is present. This app is probably installed before
   // DayOfInstall was implemented. Do not send DayOfInstall in this case.
   return kUnknownDayOfInstall;
+}
+
+Tristate AppManager::GetAppUsageStatsEnabled(const GUID& app_guid) const {
+  if (!IsAppRegistered(app_guid) && !IsAppUninstalled(app_guid)) {
+    return TRISTATE_NONE;
+  }
+
+  if (app_registry_utils::AreAppUsageStatsEnabled(is_machine_,
+                                                  GuidToString(app_guid))) {
+    return TRISTATE_TRUE;
+  }
+
+  return TRISTATE_FALSE;
 }
 
 // Clear the Installation ID if at least one of the conditions is true:

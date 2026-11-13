@@ -356,9 +356,11 @@ HRESULT BitsRequest::SetJobProperties() {
     }
   }
 
-  // Always set no_progress_timeout to 0 for foreground jobs which means the
-  // jobs in transient error state will be immediately moved to error state.
-  int no_progress_timeout = low_priority_ ? no_progress_timeout_ : 0;
+  // This sets `no_progress_timeout` to 0 for all jobs to prevent retries and
+  // forces the jobs into the BG_JOB_STATE_ERROR state immediately if any errors
+  // are encountered.
+  // This also implies that the `MinimumRetryDelay` set above will be ignored.
+  int no_progress_timeout = 0;
 
   if (no_progress_timeout != -1) {
     ASSERT1(no_progress_timeout >= 0);
@@ -549,6 +551,7 @@ HRESULT BitsRequest::DoSend() {
   // we resume the job. There is an assumption, so far true, that calling
   // Resume on a job, the state changes right away from SUSPENDED to QUEUED.
 
+  bool job_reached_transfering_once = false;
   for (;;) {
     if (is_canceled_) {
       return GOOPDATE_E_CANCELLED;
@@ -560,12 +563,24 @@ HRESULT BitsRequest::DoSend() {
       return hr;
     }
 
-    NET_LOG(L3, (_T("[job %s][state %s]"),
+    OPT_LOG(L3, (_T("[BitsRequest::DoSend][url %s][job %s][state %s]"), url_,
                  GuidToString(request_state_->bits_job_id),
                  JobStateToString(job_state)));
 
     switch (job_state) {
       case BG_JOB_STATE_QUEUED:
+      if (job_reached_transfering_once) {
+          // BITS moves a job from transferring to queued if the user being
+          // impersonated logs off while the job is transferring. This is not
+          // desired for system level Omaha as the job will not make progress
+          // until that same user logs back in. If this happens, let the
+          // operation fallback to other downloaders instead of blocking.
+          OPT_LOG(LW, (L"[BITS job %s moved from transferring to queued][fail "
+                       L"the job to fallback]",
+                       GuidToString(request_state_->bits_job_id)));
+          return CI_E_BITS_REQUEUED;
+
+        }
         break;
 
       case BG_JOB_STATE_CONNECTING:
@@ -579,6 +594,7 @@ HRESULT BitsRequest::DoSend() {
 
       case BG_JOB_STATE_TRANSFERRING:
         OnStateTransferring();
+        job_reached_transfering_once = true;
         break;
 
       case BG_JOB_STATE_TRANSIENT_ERROR:
@@ -637,7 +653,7 @@ HRESULT BitsRequest::DoSend() {
 
       case BG_JOB_STATE_CANCELLED:
         return GOOPDATE_E_CANCELLED;
-    };
+    }
 
     // Check to see if we've been redirected to a different URL.
     CString current_url;

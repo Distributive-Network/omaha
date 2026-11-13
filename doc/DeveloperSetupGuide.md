@@ -4,9 +4,7 @@ These instructions are intended to assist the would-be Omaha developer with sett
 
 We are striving to make the code build with the latest Windows toolchain from Microsoft. Since there is no continuous integration for this project, the code may not build using previous versions of the toolchain.
 
-#### Currently, the supported toolchain is Visual Studio 2019 Update 16.7.3 and Windows SDK 10.0.18362.0. ####
-
-Visual Studio 2017 Update 15.9.16 should work too.
+#### Currently, the supported toolchain is Visual Studio 2022 Update 17.8.3 and Windows SDK 10.0.22621.0. ####
 
 The updater runs on Windows 7, 8, and 10. Windows XP is not supported in the current build configuration due to a number of issues, such as thread-safe initializing of static local variables, etc.
 
@@ -14,12 +12,12 @@ The updater runs on Windows 7, 8, and 10. Windows XP is not supported in the cur
 
 The following packages are required to build Omaha:
   * A copy of the Omaha source code.  This can be done by cloning this repository.
-  * Microsoft Visual Studio 2017 or 2019. The free Visual Studio Community edition is sufficient to build.
+  * Microsoft Visual Studio 2022. The free Visual Studio Community edition is sufficient to build.
     * Download [here](https://visualstudio.microsoft.com/downloads)
   * Windows 10 SDK.
     * Visual Studio copy of Windows 10 SDK is sufficient to build with, if desired.
     * Optionally, download and intall Windows 10 SDK [here](https://dev.windows.com/en-us/downloads/windows-10-sdk).
-  * The Windows Template Library (WTL)
+  * The Windows Template Library (WTL) - WTL 10.0.10320 Release
     * Download WTL [here](http://sourceforge.net/projects/wtl/).
     * hammer.bat has `OMAHA_WTL_DIR` set to `C:\wtl\files`. Change this if you unpacked to a different location.
   * The Windows Install XML (WiX) Toolkit, version 3.0 or later.
@@ -40,12 +38,13 @@ The following packages are required to build Omaha:
   * The GO programming language
     * Download [here](https://golang.org/dl/) 
     * Change this line in hammer.bat if you installed to a different location: `set GOROOT=C:\go`.
-  * Google Protocol Buffers (3.13.0 or higher) [here](https://github.com/google/protobuf/releases).
-    * From the [release page](https://github.com/google/protobuf/releases), download the zip file `protoc-$VERSION-win32.zip`. It contains the protoc binary. Unzip the contents under `C:\protobuf`. After that, download the zip file `protobuf-cpp-$VERSION.zip`. Unzip the `src` sub-directory contents to `C:\protobuf\src`. If other directory is used, please edit the environment variables in the hammer.bat, specifically, `OMAHA_PROTOBUF_BIN_DIR` and `OMAHA_PROTOBUF_SRC_DIR`.
+  * Google Protocol Buffers (currently tested with v3.17.3) [here](https://github.com/protocolbuffers/protobuf/releases).
+    * From the [release page](https://github.com/protocolbuffers/protobuf/releases), download the zip file `protoc-$VERSION-win32.zip`. It contains the protoc binary. Unzip the contents under `C:\protobuf`. After that, download the zip file `protobuf-cpp-$VERSION.zip`. Unzip the `src` sub-directory contents to `C:\protobuf\src`. If other directory is used, please edit the environment variables in the hammer.bat, specifically, `OMAHA_PROTOBUF_BIN_DIR` and `OMAHA_PROTOBUF_SRC_DIR`.
   * Third-party dependencies:
-    * breakpad. Download [here](https://codeload.github.com/google/breakpad/zip/master). 
+    * breakpad. Download [here](https://github.com/google/breakpad/archive/refs/heads/main.zip). Tested with commit [11ec9c](https://github.com/google/breakpad/commit/11ec9c32888c06665b8838f709bd66c0be9789a6) from Dec 11, 2023.
       - Unzip everything inside `breakpad-master.zip\breakpad-master` to `third_party\breakpad`.
-    * googletest. Download [here](https://codeload.github.com/google/googletest/zip/master). This includes both gtest and gmock frameworks.
+    * googletest. Download [here](https://github.com/google/googletest/archive/refs/heads/master.zip). Tested with commit [96eadf
+](https://github.com/google/googletest/commit/96eadf659fb75ecda943bd97413c71d4c17c4f43) from Dec 22, 2023. This includes both gtest and gmock frameworks.
       - Unzip everything inside `googletest-master.zip\googletest-master` to `third_party\googletest`.
     * libzip 1.7.3. Source code [here](https://libzip.org/download/libzip-1.7.3.tar.xz). Unzip the contents of `libzip-1.7.3.tar.gz\libzip-1.7.3.tar\libzip-1.7.3\` into the directory `third_party\libzip`. The Omaha repository contains two generated configuration files in `base\libzip`, or one could build the libzip library and generate the files. A change has been made to config.h to disable zip crypto `#undef HAVE_CRYPTO`, or else the zip code won't build because of a compile time bug.
     * zlib 1.2.11. Source code [here](https://zlib.net/zlib-1.2.11.tar.gz). Unzip the contents of `zlib-1.2.11.tar.gz\zlib-1.2.11.tar\zlib-1.2.11\` into the directory `third_party\zlib`.

@@ -41,13 +41,6 @@
 
 namespace omaha {
 
-namespace {
-
-const int kNumberOfCreateServiceRetries = 5;
-const int kSleepBetweenCreateServiceRetryMs = 200;
-
-}  // namespace
-
 SetupFiles::SetupFiles(bool is_machine)
 : is_machine_(is_machine) {
   SETUP_LOG(L2, (_T("[SetupFiles::SetupFiles]")));
@@ -110,21 +103,6 @@ HRESULT SetupFiles::Install() {
     return hr;
   }
 
-  // Copy the metainstaller.  Since the metainstaller is tagged, its file size
-  // may vary; so, we always overwrite, even if it's the same version.
-  // TODO(omaha): Once we refactor our tag management functions to be capable
-  // of stripping the tag from a MI, change this so that we always copy over
-  // an untagged metainstaller instead.  Untagged metainstallers should always
-  // be the same size.
-  hr = CopyInstallFiles(metainstaller_files_, install_dir, true);
-  if (FAILED(hr)) {
-    OPT_LOG(LEVEL_ERROR, (_T("[Failed to copy metainstaller][0x%08x]"), hr));
-    if (E_ACCESSDENIED == hr) {
-      return GOOPDATE_E_ACCESSDENIED_COPYING_MI;
-    }
-    return hr;
-  }
-
   // Attempt to copy the optional files.
   hr = CopyInstallFiles(optional_files_, install_dir, should_over_install);
   if (FAILED(hr)) {
@@ -177,6 +155,20 @@ void SetupFiles::Uninstall() {
   if (FAILED(hr)) {
     SETUP_LOG(LE, (_T("[DeleteDirectory failed][%s][0x%08x]"),
                    install_dir, hr));
+  }
+
+  // Best-effort attempt to delete the company directory if it is empty.
+  CString company_dir(
+      is_machine_ ? ConfigManager::Instance()->GetMachineCompanyDir() :
+                    ConfigManager::Instance()->GetUserCompanyDir());
+  if (!File::IsDirectory(company_dir) || !::PathIsDirectoryEmpty(company_dir)) {
+    return;
+  }
+
+  // `::RemoveDirectory` deletes an existing empty directory.
+  if (!::RemoveDirectory(company_dir)) {
+    hr = HRESULTFromLastError();
+    SETUP_LOG(LE, (_T("[::RemoveDirectory failed][%s][%#x]"), company_dir, hr));
   }
 }
 
@@ -271,8 +263,13 @@ HRESULT SetupFiles::ShouldCopyShell(const CString& shell_install_path,
 }
 
 HRESULT SetupFiles::SaveShellForRollback(const CString& shell_install_path) {
+  const CString temp_dir = ConfigManager::Instance()->GetTempDir();
+  if (temp_dir.IsEmpty()) {
+    return E_UNEXPECTED;
+  }
+
   // Copy existing file to a temporary file in case we need to roll back.
-  CString temp_file = GetTempFilename(_T("gsh"));
+  CString temp_file = GetTempFilenameAt(temp_dir, _T("gsh"));
   if (temp_file.IsEmpty()) {
     const DWORD error = ::GetLastError();
     SETUP_LOG(LEVEL_WARNING, (_T("[::GetTempFilename failed][%d]"), error));
@@ -289,11 +286,9 @@ HRESULT SetupFiles::SaveShellForRollback(const CString& shell_install_path) {
 }
 
 // The list of files below needs to be kept in sync with payload_files in
-// omaha_version_utils.py. The one exception is kOmahaMetainstallerFileName,
-// which is not part of the payload.
+// omaha_version_utils.py.
 HRESULT SetupFiles::BuildFileLists() {
   ASSERT1(core_program_files_.empty());
-  ASSERT1(metainstaller_files_.empty());
   ASSERT1(optional_files_.empty());
 
   core_program_files_.clear();
@@ -312,9 +307,6 @@ HRESULT SetupFiles::BuildFileLists() {
   core_program_files_.push_back(kPSFileNameUser64);
   core_program_files_.push_back(kPSFileNameMachine);
   core_program_files_.push_back(kPSFileNameMachine64);
-
-  metainstaller_files_.clear();
-  metainstaller_files_.push_back(kOmahaMetainstallerFileName);
 
   // If files are removed from this list, unit tests such as
   // ShouldInstall_SameVersionOptionalFileMissing may need to be updated.

@@ -35,7 +35,7 @@ def GenerateUpdateResponseFile(target, sources, version_list, has_x64_binaries):
     arch_requirement = 'x64'
 
   manifest_content_list = [xml_header, response_header]
-  for file_index in xrange(0, len(sources), 2):
+  for file_index in range(0, len(sources), 2):
     source_manifest_path = sources[file_index]
     binary_path = sources[file_index + 1]
     size = os.stat(os.path.abspath(binary_path)).st_size
@@ -66,7 +66,7 @@ def GenerateUpdateResponseFile(target, sources, version_list, has_x64_binaries):
     resp = manifest_content[response_body_start_index:response_body_end_index]
     resp = resp.replace('${INSTALLER_SIZE}', str(size))
     resp = resp.replace('${INSTALLER_HASH_SHA256}', hash_value)
-    resp = resp.replace('${INSTALLER_VERSION}', version_list[file_index/2])
+    resp = resp.replace('${INSTALLER_VERSION}', version_list[int(file_index/2)])
     resp = resp.replace('${ARCH_REQUIREMENT}', arch_requirement)
     manifest_content_list.append(resp)
   manifest_content_list.append(response_footer)
