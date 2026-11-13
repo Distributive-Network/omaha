@@ -25,9 +25,16 @@ To sign an EXE/DLL do:
                    TIMESTAMP_SERVER='')
 If no certificate file is specified, copying instead of signing will occur.
 If an empty timestamp server string is specified, there will be no timestamp.
+
+Distributive builds set the OMAHA_SIGN_ARGS environment variable to the
+complete signtool arguments (SHA-256 digest, RFC 3161 timestamp, the eToken
+CSP and certificate). It replaces the arguments built from the options below,
+and every signed binary is then verified with "signtool verify /pa", so a
+build cannot succeed with an unsigned or test-signed binary.
 """
 
 import optparse
+import os
 from SCons.compat._scons_optparse import OptionConflictError
 import SCons.Script
 
@@ -106,6 +113,12 @@ def SignedBinaryGenerator(source, target, env, for_signature):
       SCons.Script.Chmod('$TARGET', 0755),
   ]
 
+  sign_args = os.environ.get('OMAHA_SIGN_ARGS')
+  if sign_args:
+    commands.append('$SIGNTOOL sign %s "$TARGET"' % sign_args)
+    commands.append('$SIGNTOOL verify /pa "$TARGET"')
+    return commands
+
   # Only do signing if there is a certificate file or certificate name.
   if env.subst('$CERTIFICATE_PATH') or env.subst('$CERTIFICATE_NAME'):
     # The command used to do signing (target added on below).
@@ -144,6 +157,12 @@ def DualSignedBinaryGenerator(source, target, env, for_signature):
       SCons.Script.Copy('$TARGET', '$SOURCE'),
       SCons.Script.Chmod('$TARGET', 0755),
   ]
+
+  sign_args = os.environ.get('OMAHA_SIGN_ARGS')
+  if sign_args:
+    commands.append('$SIGNTOOL sign %s "$TARGET"' % sign_args)
+    commands.append('$SIGNTOOL verify /pa "$TARGET"')
+    return commands
 
   # Only do signing if there are certificate files or a certificate name. The
   # CERTIFICATE_NAME is expected to be the same for both SHA1 and SHA2.
