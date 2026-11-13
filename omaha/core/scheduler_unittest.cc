@@ -136,7 +136,7 @@ TEST_F(SchedulerTest, DoesntUseDebugTimer) {
 
 TEST_F(SchedulerTest, UsesDebugTimer) {
   int call_count = 0;
-  constexpr int kExpectedIntervalMs = 500;
+  static constexpr int kExpectedIntervalMs = 500;
   scoped_handle callback_handle(::CreateEvent(NULL, true, false, NULL));
   {
     Scheduler scheduler;
@@ -157,7 +157,7 @@ TEST_F(SchedulerTest, UsesDebugTimer) {
 TEST_F(SchedulerTest, LongCallbackBlocks) {
   auto scheduler = std::make_unique<Scheduler>();
   constexpr int kInterval = 50;
-  constexpr int kCallbackDelay = 500;
+  static constexpr int kCallbackDelay = 500;
 
   scoped_handle callback_start(::CreateEvent(NULL, true, false, NULL));
   scoped_handle callback_end(::CreateEvent(NULL, true, false, NULL));
