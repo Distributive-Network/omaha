@@ -26,11 +26,12 @@ To sign an EXE/DLL do:
 If no certificate file is specified, copying instead of signing will occur.
 If an empty timestamp server string is specified, there will be no timestamp.
 
-Distributive builds set the OMAHA_SIGN_ARGS environment variable to the
-complete signtool arguments (SHA-256 digest, RFC 3161 timestamp, the eToken
-CSP and certificate). It replaces the arguments built from the options below,
-and every signed binary is then verified with "signtool verify /pa", so a
-build cannot succeed with an unsigned or test-signed binary.
+Distributive builds set the OMAHA_SIGN_COMMAND environment variable to a
+command that signs the file given as its last argument (omaha-build's
+tools/sign.ps1, which unlocks the eToken itself, so no secret appears on a
+logged command line). It replaces signing with the options below, and every
+signed binary is then verified with "signtool verify /pa", so a build cannot
+succeed with an unsigned or test-signed binary.
 """
 
 import optparse
@@ -113,9 +114,11 @@ def SignedBinaryGenerator(source, target, env, for_signature):
       SCons.Script.Chmod('$TARGET', 0755),
   ]
 
-  sign_args = os.environ.get('OMAHA_SIGN_ARGS')
-  if sign_args:
-    commands.append('$SIGNTOOL sign %s "$TARGET"' % sign_args)
+  sign_command = os.environ.get('OMAHA_SIGN_COMMAND')
+  if sign_command:
+    # Not wrapped in retry.py: repeated attempts with a bad PIN can lock the
+    # eToken. The command retries timestamp failures itself.
+    commands.append('%s "$TARGET"' % sign_command)
     commands.append('$SIGNTOOL verify /pa "$TARGET"')
     return commands
 
@@ -158,9 +161,11 @@ def DualSignedBinaryGenerator(source, target, env, for_signature):
       SCons.Script.Chmod('$TARGET', 0755),
   ]
 
-  sign_args = os.environ.get('OMAHA_SIGN_ARGS')
-  if sign_args:
-    commands.append('$SIGNTOOL sign %s "$TARGET"' % sign_args)
+  sign_command = os.environ.get('OMAHA_SIGN_COMMAND')
+  if sign_command:
+    # Not wrapped in retry.py: repeated attempts with a bad PIN can lock the
+    # eToken. The command retries timestamp failures itself.
+    commands.append('%s "$TARGET"' % sign_command)
     commands.append('$SIGNTOOL verify /pa "$TARGET"')
     return commands
 

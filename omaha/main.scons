@@ -363,7 +363,7 @@ if not win_env.Bit('build_server'):
   # Store whether we're using the default test cert separately, because
   # we won't always know what the default password was.
   if (GetOption('authenticode_password') is default_cert_password and
-      not os.environ.get('OMAHA_SIGN_ARGS')):
+      not os.environ.get('OMAHA_SIGN_COMMAND')):
     win_env.SetBits('test_certificate')
 
 # Build the 64 bit version of the code.
