@@ -158,6 +158,10 @@ win_env['ENV']['GOROOT'] = os.getenv('GOROOT',
                                      win_env.subst('$MAIN_DIR') +
                                      '\\..\\third_party\\go\\files')
 win_env['ENV']['LocalAppData'] = os.getenv('LocalAppData')
+# Omaha's test certificate has a negative serial number, which Go 1.23+ refuses to parse;
+# certificate_tag.go needs this for test-signed builds. SCons does not pass the caller's
+# environment through, so it is set here.
+win_env['ENV']['GODEBUG'] = 'x509negativeserial=1'
 
 # Append paths for supporting tools such as uuidgen.exe.
 win_env.AppendENVPath('PATH', (os.environ['WindowsSdkVerBinPath'] + '\\x86\\'))
